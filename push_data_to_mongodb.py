@@ -1,27 +1,30 @@
 import os
 import sys
 import json
+import certifi
+import pandas as pd
+import pymongo
+from falldetection.exception.exception import FallDetectionException
+from falldetection.logging.logger import logging
 
 from dotenv import load_dotenv
 load_dotenv()
 
 MONGODB_URL=os.getenv("MONGODB_URL")
 
-import certifi
-ca=certifi.where()
-
-import pandas as pd
-import numpy as np
-import pymongo
-from network_security.exception.exception import NetworkSecurityException
-from network_security.logging.logger import logging
+client = pymongo.MongoClient(
+    MONGODB_URL,
+    tls=True,
+    tlsCAFile=certifi.where(),
+    serverSelectionTimeoutMS=30000
+)
 
 class NetworkDataExtract():
     def __init__(self):
         try:
             pass
         except Exception as e:
-            raise NetworkSecurityException(e,sys)
+            raise FallDetectionException(e,sys)
         
     def csv_to_json_convertor(self,file_path):
         try:
@@ -30,7 +33,7 @@ class NetworkDataExtract():
             records=list(json.loads(data.T.to_json()).values())
             return records
         except Exception as e:
-            raise NetworkSecurityException(e,sys)
+            raise FallDetectionException(e,sys)
         
     def insert_data_mongodb(self,records,database,collection):
         try:
@@ -45,10 +48,10 @@ class NetworkDataExtract():
             self.collection.insert_many(self.records)
             return(len(self.records))
         except Exception as e:
-            raise NetworkSecurityException(e,sys)
+            raise FallDetectionException(e,sys)
         
 if __name__=='__main__':
-    FILE_PATH="network_data\fall_detection_data.csv"
+    FILE_PATH="fall_data\/fall_detection_data.csv"
     DATABASE="MLops"
     Collection="FallData"
     networkobj=NetworkDataExtract()
@@ -57,5 +60,3 @@ if __name__=='__main__':
     no_of_records=networkobj.insert_data_mongodb(records,DATABASE,Collection)
     print(no_of_records)
         
-
-
